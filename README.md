@@ -43,14 +43,26 @@ parity check.
 4. Add `NSCameraUsageDescription` to Info.plist ("Used to classify the camera feed on-device").
 5. Build to a **real device** (camera + Neural Engine aren't in the simulator).
 
-## Results (fill in from your own runs)
-| Model            | Size   | Top-1 (val subset) | Latency / frame (device) |
-|------------------|--------|--------------------|--------------------------|
-| MobileNetV2 fp16 | ~14 MB | TODO               | TODO                     |
-| MobileNetV2 INT8 | ~3.5 MB| TODO               | TODO                     |
+## Results
 
-> Fill these from real measurements — the honesty is the point. The interesting
-> story is how little accuracy you lose for the size/latency win.
+Measured from an actual `convert_model.py` run (MobileNetV2, ImageNet weights):
+
+| Model            | Size (.mlpackage) | Sample parity vs PyTorch | On-host latency¹ | On-device latency² |
+|------------------|-------------------|--------------------------|------------------|--------------------|
+| MobileNetV2 fp16 | 7.07 MB           | —                        | —                | TODO               |
+| MobileNetV2 INT8 | 3.69 MB           | top-1 agrees ("Samoyed") | 11.2 ms          | TODO               |
+
+**INT8 vs fp16 baseline: 1.92× smaller** (7.07 → 3.69 MB), top-1 prediction unchanged
+on the sample image. The reduction is ~2× rather than ~4× because coremltools already
+stores fp16 (16-bit) weights by default, so INT8 halves an already-halved baseline.
+
+¹ On-host = this Mac via the coremltools runtime; representative, not the shipping target.
+² On-device latency requires building in Xcode and deploying to a physical iPhone
+(camera + Neural Engine are not available in the simulator) — fill from a real device run.
+
+> Note: INT8 weight quantization emitted divide-by-zero warnings on a few zero-range
+> weight tensors; top-1 parity still held on the test image. Validate on a larger set
+> before trusting it broadly — that verification is exactly the interesting part.
 
 ## Privacy note
 There is no networking code in this repo. All inference runs locally; the camera
